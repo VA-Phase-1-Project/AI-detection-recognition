@@ -1,0 +1,33 @@
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+.venv/
+
+# ===== YOLO / CV =====
+*.pt
+*.onnx
+*.engine
+*.weights
+runs/
+outputs/
+datasets/
+
+# ===== OpenCV =====
+*.avi
+*.mp4
+
+# ===== Node / Frontend =====
+node_modules/
+dist/
+.vite/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Logs =====
+*.log

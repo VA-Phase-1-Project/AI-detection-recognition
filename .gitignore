@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.venv/
+venv/
+env/
+.env
+.env.*
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Backend runtime/logs
+*.log
+logs/
+tmp/
+temp/
+
+# ML / CV artifacts
+*.pt
+*.pth
+*.onnx
+*.engine
+*.weights
+runs/
+outputs/
+datasets/
+
+# Video/media outputs
+*.avi
+*.mp4
+
+# Node / frontend
+node_modules/
+dist/
+build/
+.vite/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/coverage/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
