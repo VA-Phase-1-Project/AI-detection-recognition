@@ -75,7 +75,7 @@ def _annotate(
             cv2.rectangle(output, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(
                 output,
-                f"Face {idx}",
+                f"ID {idx}",
                 (x1, max(20, y1 - 10)),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
@@ -94,17 +94,6 @@ def _annotate(
                 (0, 255, 0),
                 2,
             )
-
-    count = len(set(track_ids)) if track_ids is not None else len(boxes)
-    cv2.putText(
-        output,
-        f"Faces: {count}",
-        (12, 28),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.8,
-        (255, 255, 255),
-        2,
-    )
     return output
 
 
