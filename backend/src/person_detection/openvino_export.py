@@ -5,10 +5,8 @@ import subprocess
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-
 class OpenVINOExportError(RuntimeError):
     pass
-
 
 def export_onnx_to_openvino(
     onnx_bytes: bytes,
@@ -52,7 +50,6 @@ def export_onnx_to_openvino(
         "xml_path": str(out_xml),
         "bin_path": str(out_bin),
     }
-
 
 def _build_openvino_command(onnx_path: Path, out_xml: Path) -> list[str]:
     ovc = shutil.which("ovc")

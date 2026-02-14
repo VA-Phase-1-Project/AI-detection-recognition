@@ -16,13 +16,14 @@ from .config import (
 )
 from .model import model
 
-# Set to [0] for COCO person-class models.
-# Keep None for custom face-only models until class mapping is verified.
 CLASS_FILTER: list[int] | None = [0]
+BBox = tuple[int, int, int, int]
+Payload = dict[str, Any]
 
 
 class FaceTracker:
-    # Compatibility shim (legacy call sites pass tracker args).
+    """Compatibility placeholder for legacy call signatures."""
+
     def __init__(self, max_distance: float = 80.0):
         self.max_distance = max_distance
 
@@ -33,7 +34,7 @@ class FaceTracker:
 
 def _extract_boxes_and_ids(
     result: Any,
-) -> tuple[list[tuple[int, int, int, int]], list[int] | None]:
+) -> tuple[list[BBox], list[int] | None]:
     if result.boxes is None:
         return [], None
 
@@ -48,7 +49,7 @@ def _extract_boxes_and_ids(
 
 
 def _as_detection_payload(
-    boxes: list[tuple[int, int, int, int]],
+    boxes: list[BBox],
     track_ids: list[int] | None = None,
 ) -> list[dict[str, Any]]:
     detections: list[dict[str, Any]] = []
@@ -65,7 +66,7 @@ def _as_detection_payload(
 
 def _annotate(
     frame: np.ndarray,
-    boxes: list[tuple[int, int, int, int]],
+    boxes: list[BBox],
     track_ids: list[int] | None = None,
 ) -> np.ndarray:
     output = frame.copy()
@@ -97,12 +98,26 @@ def _annotate(
     return output
 
 
+def _count_detections(boxes: list[BBox], track_ids: list[int] | None) -> int:
+    return len(set(track_ids)) if track_ids is not None else len(boxes)
+
+
+def _empty_payload() -> Payload:
+    return {
+        "face_count": 0,
+        "person_count": 0,
+        "count": 0,
+        "detections": [],
+        "person_detections": [],
+    }
+
+
 def _make_payload(
-    boxes: list[tuple[int, int, int, int]],
+    boxes: list[BBox],
     track_ids: list[int] | None,
-) -> dict[str, Any]:
+) -> Payload:
     detections = _as_detection_payload(boxes, track_ids)
-    count = len(set(track_ids)) if track_ids is not None else len(boxes)
+    count = _count_detections(boxes, track_ids)
 
     # Keep person fields for existing frontend/routes contract.
     return {
@@ -155,8 +170,9 @@ def detect_frame(
     frame: np.ndarray,
     face_tracker: FaceTracker | None = None,
     person_tracker: FaceTracker | None = None,
-) -> tuple[dict[str, Any], np.ndarray]:
+) -> tuple[Payload, np.ndarray]:
     # Compatibility default: frame-level detection for single-image usage.
+    _ = (face_tracker, person_tracker)
     return detect_frame_predict(frame)
 
 
@@ -164,7 +180,7 @@ def detect_frame(
 # RTSP CAMERA
 # ==============================
 
-def open_realtime_capture():
+def open_realtime_capture(camera_index: int = 0):
     print("Trying RTSP:", RTSP_URL)
     rtsp_capture = cv2.VideoCapture(RTSP_URL, cv2.CAP_FFMPEG)
     rtsp_capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -173,9 +189,9 @@ def open_realtime_capture():
         return rtsp_capture
 
     rtsp_capture.release()
-    webcam_capture = cv2.VideoCapture(0)
+    webcam_capture = cv2.VideoCapture(camera_index)
     if webcam_capture.isOpened():
-        print("RTSP unavailable, using local webcam (index 0).")
+        print(f"RTSP unavailable, using local webcam (index {camera_index}).")
         return webcam_capture
 
     webcam_capture.release()
@@ -206,16 +222,10 @@ def generate_realtime_detection_stream(
     camera_index: int = 0,
     on_frame: Callable[[dict[str, Any]], None] | None = None,
 ) -> Iterator[bytes]:
-    capture = open_realtime_capture()
+    capture = open_realtime_capture(camera_index)
 
     if capture is None:
-        payload = {
-            "face_count": 0,
-            "person_count": 0,
-            "count": 0,
-            "detections": [],
-            "person_detections": [],
-        }
+        payload = _empty_payload()
         if on_frame:
             on_frame(payload)
 
@@ -239,7 +249,7 @@ def generate_realtime_detection_stream(
             if not ok:
                 capture.release()
                 time.sleep(0.2)
-                capture = open_realtime_capture()
+                capture = open_realtime_capture(camera_index)
                 if capture is None:
                     continue
                 continue
@@ -268,7 +278,7 @@ def decode_uploaded_image(file_bytes: bytes) -> np.ndarray:
     return frame
 
 
-def detect_faces_from_uploaded_image(file_bytes: bytes) -> dict[str, Any]:
+def detect_faces_from_uploaded_image(file_bytes: bytes) -> Payload:
     frame = decode_uploaded_image(file_bytes)
     payload, annotated = detect_frame_predict(frame)
 
@@ -287,7 +297,7 @@ def detect_faces_from_uploaded_image(file_bytes: bytes) -> dict[str, Any]:
 def analyze_uploaded_video(
     file_bytes: bytes,
     suffix: str = ".mp4",
-) -> dict[str, Any]:
+) -> Payload:
     with NamedTemporaryFile(delete=False, suffix=suffix) as temp:
         temp.write(file_bytes)
         input_path = Path(temp.name)

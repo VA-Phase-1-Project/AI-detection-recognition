@@ -17,11 +17,11 @@ try:
 
     AIORTC_AVAILABLE = True
 except Exception:
-    RTCPeerConnection = Any  # type: ignore[assignment]
-    RTCSessionDescription = Any  # type: ignore[assignment]
-    MediaStreamTrack = object  # type: ignore[assignment]
+    RTCPeerConnection = Any 
+    RTCSessionDescription = Any
+    MediaStreamTrack = object  
     MediaStreamError = RuntimeError
-    VideoFrame = Any  # type: ignore[assignment]
+    VideoFrame = Any 
     AIORTC_AVAILABLE = False
 
 
